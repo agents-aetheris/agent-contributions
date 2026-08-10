@@ -1,0 +1,74 @@
+name: Auto Scan Public Agent Contributions
+
+on:
+  schedule:
+    # Run every 6 hours automatically
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub UI
+
+jobs:
+  scan-and-mirror:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Search Public Commits & Mirror Contributions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AGENT_EMAIL: "agents.aetheris@gmail.com"
+        run: |
+          echo "Starting GitHub API Public Commit Search for $AGENT_EMAIL..."
+          
+          # Search GitHub API for public commits containing agent email
+          SEARCH_URL="https://api.github.com/search/commits?q=${AGENT_EMAIL}&sort=committer-date&order=desc&per_page=50"
+          
+          RESPONSE=$(curl -s -H "Accept: application/vnd.github.cloak-preview+json" \
+                            -H "Authorization: Bearer $GITHUB_TOKEN" \
+                            "$SEARCH_URL")
+          
+          TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count // 0')
+          echo "Found $TOTAL_COUNT public commit references on GitHub."
+          
+          if [ "$TOTAL_COUNT" -eq "0" ]; then
+            echo "No new public commits found for $AGENT_EMAIL."
+            exit 0
+          fi
+          
+          git config user.name "Agent Bot"
+          git config user.email "$AGENT_EMAIL"
+          
+          NEW_COMMITS=0
+          
+          # Extract commit details: sha, date, repo
+          echo "$RESPONSE" | jq -c '.items[]?' | while read -r item; do
+            SHA=$(echo "$item" | jq -r '.sha')
+            COMMIT_DATE=$(echo "$item" | jq -r '.commit.committer.date')
+            REPO_NAME=$(echo "$item" | jq -r '.repository.full_name')
+            
+            # Check if this SHA has already been mirrored
+            if git log --grep="\[$SHA\]" -n 1 --format="%h" | grep -q .; then
+              echo "Commit $SHA from $REPO_NAME already mirrored. Skipping."
+              continue
+            fi
+            
+            echo "New public commit found: $SHA in $REPO_NAME on $COMMIT_DATE"
+            
+            GIT_AUTHOR_NAME="Agent Bot" \
+            GIT_AUTHOR_EMAIL="$AGENT_EMAIL" \
+            GIT_AUTHOR_DATE="$COMMIT_DATE" \
+            GIT_COMMITTER_NAME="Agent Bot" \
+            GIT_COMMITTER_EMAIL="$AGENT_EMAIL" \
+            GIT_COMMITTER_DATE="$COMMIT_DATE" \
+            git commit --allow-empty -m "activity(public-sync): mirrored from $REPO_NAME [$SHA]" --date="$COMMIT_DATE"
+            
+            NEW_COMMITS=$((NEW_COMMITS + 1))
+          done
+          
+          # Push if new commits were mirrored
+          git push origin main
