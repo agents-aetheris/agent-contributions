@@ -30,6 +30,7 @@ jobs:
           
           RESPONSE=$(curl -s -H "Accept: application/vnd.github.cloak-preview+json" \
                             -H "Authorization: Bearer $GITHUB_TOKEN" \
+                            -H "X-GitHub-Stateless-S2S-Token: enabled" \
                             "$SEARCH_URL")
           
           TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count // 0')
