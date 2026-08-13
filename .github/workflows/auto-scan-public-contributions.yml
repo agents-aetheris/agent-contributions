@@ -20,7 +20,7 @@ jobs:
 
       - name: Search Public Commits & Mirror Contributions
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MIRROR_SYNC_TOKEN }}
           AGENT_EMAIL: "agents.aetheris@gmail.com"
         run: |
           echo "Starting GitHub API Public Commit Search for $AGENT_EMAIL..."
