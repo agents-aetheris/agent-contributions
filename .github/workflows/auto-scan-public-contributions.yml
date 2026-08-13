@@ -52,6 +52,11 @@ jobs:
             COMMIT_DATE=$(echo "$item" | jq -r '.commit.committer.date')
             REPO_NAME=$(echo "$item" | jq -r '.repository.full_name')
             
+            # Ignore commits from the mirror repo itself to prevent infinite loops
+            if [ "$REPO_NAME" = "agents-aetheris/agent-contributions" ]; then
+              continue
+            fi
+            
             # Check if this SHA has already been mirrored
             if git log --grep="\[$SHA\]" -n 1 --format="%h" | grep -q .; then
               echo "Commit $SHA from $REPO_NAME already mirrored. Skipping."
