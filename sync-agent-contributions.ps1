@@ -74,18 +74,36 @@ if ($role) {
         $env:GIT_COMMITTER_EMAIL = $AgentEmail
 
         $commitMsg = "activity($role): sync contribution from work repo [$commitHash]"
-        git commit --allow-empty -m "$commitMsg"
-        
+        git commit --allow-empty -m "$commitMsg" --quiet
+
         if ($LASTEXITCODE -eq 0) {
-            git push origin main --quiet
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "[Agent Sync] Successfully pushed contribution graph update ($role)!" -ForegroundColor Green
+            # Keluaran git DIBUANG, bukan diteruskan ke terminal.
+            #
+            # Alasannya bukan kerapian. Sampai 2026-08-18 URL remote repo ini
+            # menanam Personal Access Token secara literal, dan setiap push yang
+            # gagal mencetak URL itu utuh ke terminal berikut tokennya - delapan
+            # kali dalam satu sesi. Tokennya sudah dicabut dari URL (kini memakai
+            # credential.helper), tapi pagar ini tetap dipasang: skrip yang
+            # berjalan otomatis di SETIAP commit DILARANG menyalurkan keluaran
+            # mentah git ke layar, karena isinya tidak pernah bisa dijamin bersih.
+            #
+            # GIT_TERMINAL_PROMPT=0 mencegah git menggantung menunggu kredensial
+            # di lingkungan non-interaktif (hook, CI).
+            $env:GIT_TERMINAL_PROMPT = '0'
+            git push origin main --quiet 2>&1 | Out-Null
+            $pushCode = $LASTEXITCODE
+            Remove-Item Env:\GIT_TERMINAL_PROMPT -ErrorAction SilentlyContinue
+
+            if ($pushCode -eq 0) {
+                Write-Host "[Agent Sync] Contribution mirrored ($role)." -ForegroundColor Green
             } else {
-                Write-Host "[Agent Sync] Pushed failed. Ensure remote repository is configured." -ForegroundColor Yellow
+                Write-Host "[Agent Sync] Mirror commit dibuat, push dilewati (exit $pushCode). Jalankan 'git push' manual di mirror repo bila perlu." -ForegroundColor Yellow
             }
         }
     } catch {
-        Write-Host "[Agent Sync] Error during mirror commit: $_" -ForegroundColor Red
+        # Pesan exception SENGAJA tidak dicetak utuh: pesan git yang gagal
+        # kerap memuat URL remote lengkap. Cetak tipe-nya saja.
+        Write-Host "[Agent Sync] Error saat mirror commit ($($_.Exception.GetType().Name)). Jalankan manual di mirror repo untuk melihat detailnya." -ForegroundColor Red
     } finally {
         Pop-Location
         Remove-Item Env:\GIT_AUTHOR_NAME -ErrorAction SilentlyContinue
