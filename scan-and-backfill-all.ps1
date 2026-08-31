@@ -8,7 +8,7 @@ param (
     [string]$AgentEmail = "agents.aetheris@gmail.com",
 
     [Parameter(Mandatory=$false)]
-    [string]$MirrorRepoPath = "C:\Users\muhan\.gemini\antigravity\scratch\agent-contributions"
+    [string]$MirrorRepoPath = "C:\Users\muhan\.gemini\antigravity\scratch\agents-contributions"
 )
 
 Write-Host "==========================================================" -ForegroundColor Cyan
@@ -67,7 +67,7 @@ if ($foundRepos.Count -eq 0) {
     exit 0
 }
 
-$ScriptBackfill = Join-Path $MirrorRepoPath "backfill-agent-contributions.ps1"
+$ScriptBackfill = Join-Path $MirrorRepoPath "backfill-agents-contributions.ps1"
 $ScriptSetup    = Join-Path $MirrorRepoPath "setup-hook.ps1"
 
 $processedCount = 0

@@ -8,7 +8,7 @@ param (
     [string]$AgentEmail = "",
 
     [Parameter(Mandatory=$false)]
-    [string]$MirrorRepoPath = "C:\Users\muhan\.gemini\antigravity\scratch\agent-contributions"
+    [string]$MirrorRepoPath = "C:\Users\muhan\.gemini\antigravity\scratch\agents-contributions"
 )
 
 # Set default Agent Email if not provided

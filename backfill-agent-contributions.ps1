@@ -8,7 +8,7 @@ param (
     [string]$AgentEmail = "agents.aetheris@gmail.com",
 
     [Parameter(Mandatory=$false)]
-    [string]$MirrorRepoPath = "C:\Users\muhan\.gemini\antigravity\scratch\agent-contributions"
+    [string]$MirrorRepoPath = "C:\Users\muhan\.gemini\antigravity\scratch\agents-contributions"
 )
 
 # Resolve absolute path of work repo

@@ -21,7 +21,7 @@ if (-not (Test-Path $GitHooksDir)) {
 }
 
 $HookScriptPath = Join-Path $GitHooksDir "post-commit"
-$ScriptToCall   = "C:\Users\muhan\.gemini\antigravity\scratch\agent-contributions\sync-agent-contributions.ps1"
+$ScriptToCall   = "C:\Users\muhan\.gemini\antigravity\scratch\agents-contributions\sync-agents-contributions.ps1"
 
 # Content for post-commit bash/sh hook (executed by Git for Windows)
 $HookContent = @"

@@ -21,31 +21,31 @@ jobs:
       - name: Search Public Commits & Mirror Contributions
         env:
           GITHUB_TOKEN: ${{ secrets.MIRROR_SYNC_TOKEN }}
-          AGENT_EMAIL: "agents.aetheris@gmail.com"
+          AGENT_EMAIL: 'agents.aetheris@gmail.com'
         run: |
           echo "Starting GitHub API Public Commit Search for $AGENT_EMAIL..."
-          
+
           # Search GitHub API for public commits containing agent email
           SEARCH_URL="https://api.github.com/search/commits?q=${AGENT_EMAIL}&sort=committer-date&order=desc&per_page=50"
-          
+
           RESPONSE=$(curl -s -H "Accept: application/vnd.github.cloak-preview+json" \
                             -H "Authorization: Bearer $GITHUB_TOKEN" \
                             -H "X-GitHub-Stateless-S2S-Token: enabled" \
                             "$SEARCH_URL")
-          
+
           TOTAL_COUNT=$(echo "$RESPONSE" | jq '.total_count // 0')
           echo "Found $TOTAL_COUNT public commit references on GitHub."
-          
+
           if [ "$TOTAL_COUNT" -eq "0" ]; then
             echo "No new public commits found for $AGENT_EMAIL."
             exit 0
           fi
-          
+
           git config user.name "Agent Bot"
           git config user.email "$AGENT_EMAIL"
-          
+
           NEW_COMMITS=0
-          
+
           # Extract commit details: sha, date, repo
           echo "$RESPONSE" | jq -c '.items[]?' | while read -r item; do
             SHA=$(echo "$item" | jq -r '.sha')
@@ -53,7 +53,7 @@ jobs:
             REPO_NAME=$(echo "$item" | jq -r '.repository.full_name')
             
             # Ignore commits from the mirror repo itself to prevent infinite loops
-            if [ "$REPO_NAME" = "agents-aetheris/agent-contributions" ]; then
+            if [ "$REPO_NAME" = "agents-aetheris/agents-contributions" ]; then
               continue
             fi
             
@@ -75,6 +75,6 @@ jobs:
             
             NEW_COMMITS=$((NEW_COMMITS + 1))
           done
-          
+
           # Push if new commits were mirrored
           git push origin main
